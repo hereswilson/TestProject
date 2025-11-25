@@ -1,0 +1,144 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Explorer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            color: #333;
+        }
+
+        #app {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .breadcrumbs {
+            font-weight: bold;
+            font-size: 1.1em;
+            flex-grow: 1;
+        }
+
+        /* Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+            cursor: pointer;
+        }
+
+        /* Icons/Types */
+        .icon {
+            margin-right: 8px;
+            font-weight: bold;
+        }
+
+        .folder {
+            color: #dcb67a;
+        }
+
+        .file {
+            color: #5f6368;
+        }
+
+        /* Actions */
+        .btn {
+            padding: 6px 12px;
+            cursor: pointer;
+            background: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 3px;
+        }
+
+        .btn-danger {
+            background: #d9534f;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Stats */
+        .stats {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .upload-zone {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <h1>Server File Explorer</h1>
+
+        <div class="upload-zone">
+            <h3>Upload File</h3>
+            <input type="file" id="fileInput" />
+            <button class="btn" onclick="app.uploadFile()">Upload</button>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn" onclick="app.navigateUp()" id="btnUp">⬆ Up</button>
+            <span class="breadcrumbs" id="breadcrumbs">/</span>
+            <button class="btn" onclick="app.refresh()">↻ Refresh</button>
+        </div>
+
+        <thead>
+            <table id="fileTable">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Size/Count</th>
+                        <th>Last Modified</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="fileListBody">
+                </tbody>
+            </table>
+        </thead>
+
+        <div class="stats" id="statsBar">
+            Loading...
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

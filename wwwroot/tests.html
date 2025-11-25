@@ -1,0 +1,230 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>App Logic Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #222;
+            color: #fff;
+        }
+
+        .pass {
+            color: #4caf50;
+        }
+
+        .fail {
+            color: #f44336;
+        }
+
+        .test-case {
+            margin-bottom: 5px;
+        }
+
+        h1 {
+            border-bottom: 1px solid #555;
+            padding-bottom: 10px;
+        }
+
+        .summary {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Unit Tests for File Explorer</h1>
+    <div id="results">Running tests...</div>
+
+    <!-- 1. Enable Test Mode -->
+    <script>window.__TEST_MODE__ = true;</script>
+
+    <!-- 2. Load the App Code -->
+    <script src="js/app.js"></script>
+
+    <!-- 3. Test Runner -->
+    <script>
+        const resultsDiv = document.getElementById('results');
+        let passed = 0;
+        let failed = 0;
+
+        function log(message, isSuccess) {
+            const div = document.createElement('div');
+            div.className = 'test-case ' + (isSuccess ? 'pass' : 'fail');
+            div.innerHTML = (isSuccess ? '✔ ' : '✖ ') + message;
+            resultsDiv.appendChild(div);
+            if (isSuccess) passed++; else failed++;
+        }
+
+        function assertEqual(actual, expected, description) {
+            if (actual === expected) {
+                log(`${description} [Expected: '${expected}', Got: '${actual}']`, true);
+            } else {
+                log(`${description} [Expected: '${expected}', Got: '${actual}']`, false);
+            }
+        }
+
+        // --- Run Tests ---
+
+        resultsDiv.innerHTML = ''; // Clear loading message
+
+        console.log("Starting Tests...");
+
+        // 1. Test Bytes Formatting
+        assertEqual(app.logic.formatBytes(0), '0 Bytes', 'formatBytes: 0 should be 0 Bytes');
+        assertEqual(app.logic.formatBytes(1024), '1 KB', 'formatBytes: 1024 should be 1 KB');
+        assertEqual(app.logic.formatBytes(1234), '1.21 KB', 'formatBytes: 1234 should be 1.21 KB');
+        assertEqual(app.logic.formatBytes(1048576), '1 MB', 'formatBytes: 1048576 should be 1 MB');
+
+        // 2. Test Parent Path Logic
+        assertEqual(app.logic.getParentPath('Folder/Subfolder'), 'Folder', 'getParentPath: Simple parent');
+        assertEqual(app.logic.getParentPath('Folder/Sub/Deep'), 'Folder/Sub', 'getParentPath: Deep parent');
+        assertEqual(app.logic.getParentPath('Folder'), '', 'getParentPath: Root parent should be empty string');
+        assertEqual(app.logic.getParentPath(''), '', 'getParentPath: Parent of empty is empty');
+
+        // 3. Test Path Normalization
+        assertEqual(app.logic.normalizePath(null), '', 'normalizePath: null -> ""');
+        assertEqual(app.logic.normalizePath(undefined), '', 'normalizePath: undefined -> ""');
+        assertEqual(app.logic.normalizePath('data'), 'data', 'normalizePath: string -> string');
+
+        // 4. Mock State Tests
+        app.state.currentPath = 'Old/Path';
+        app.loadDirectory('New/Path');
+        assertEqual(app.state.currentPath, 'New/Path', 'loadDirectory: Should update state.currentPath immediately');
+
+        // 5. Integration / Mock Fetch Test
+        const originalFetch = window.fetch;
+        const originalAlert = window.alert;
+        let lastAlert = '';
+        window.alert = (msg) => { lastAlert = msg; };
+
+        let lastFetchUrl = '';
+
+        // Mock Fetch for basic browse
+        window.fetch = async (url) => {
+            lastFetchUrl = url;
+            return {
+                ok: true,
+                json: async () => ({ items: [], currentPath: 'Test' })
+            };
+        };
+
+        // Trigger load
+        app.loadDirectory('Documents/Work');
+
+        // Check URL with delay to allow async operations
+        setTimeout(async () => {
+            const expectedUrl = '/api/FileSystem/browse?path=Documents%2FWork';
+
+            if (lastFetchUrl === expectedUrl) {
+                log(`API Call Correct: ${lastFetchUrl}`, true);
+            } else {
+                log(`API Call Incorrect. Expected ${expectedUrl}, got ${lastFetchUrl}`, false);
+            }
+
+            // --- 6. Detailed Upload Process Tests ---
+
+            // Setup DOM
+            let input = document.getElementById('fileInput');
+            if (!input) {
+                input = document.createElement('input');
+                input.id = 'fileInput';
+                input.type = 'file';
+                input.style.display = 'none';
+                document.body.appendChild(input);
+            }
+
+            // 6a. Test: Empty Selection Validation
+            // Ensure input is empty
+            input.value = '';
+            await app.uploadFile();
+            if (lastAlert === 'Please select a file first.') {
+                log('Upload Step 1: Correctly blocked upload when no file selected', true);
+            } else {
+                log('Upload Step 1: Failed to alert on missing file', false);
+            }
+
+            // Prepare for valid uploads
+            // Spy on Fetch specifically for upload
+            let uploadedFormData = null;
+            window.fetch = async (url, options) => {
+                if (url.endsWith('/upload') && options.method === 'POST') {
+                    uploadedFormData = options.body;
+                    return { ok: true };
+                }
+                return { ok: false, text: () => "Mock Error" };
+            };
+
+            // Mock File
+            const file = new File(['dummy content'], 'test.txt', { type: 'text/plain' });
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            input.files = dataTransfer.files;
+
+            // 6b. Test: Upload from Root (Empty Path) - CRITICAL TEST
+            app.state.currentPath = ''; // Simulate root
+            uploadedFormData = null; // Reset
+            await app.uploadFile();
+
+            if (uploadedFormData && uploadedFormData instanceof FormData) {
+                const pathSent = uploadedFormData.get('path');
+                // We expect an empty string, not null/undefined
+                if (pathSent === '') {
+                    log("Upload Step 2 (Root): 'path' field is present and is empty string", true);
+                } else if (pathSent === null) {
+                    log("Upload Step 2 (Root): 'path' field is MISSING (null)", false);
+                } else {
+                    log(`Upload Step 2 (Root): 'path' field is unexpected: '${pathSent}'`, false);
+                }
+
+                const fileSent = uploadedFormData.get('file');
+                if (fileSent && fileSent.name === 'test.txt') {
+                    log("Upload Step 2 (Root): File attached correctly", true);
+                } else {
+                    log("Upload Step 2 (Root): File missing", false);
+                }
+
+            } else {
+                log("Upload Step 2 (Root): Fetch not called or body invalid", false);
+            }
+
+            // 6c. Test: Upload from Subfolder
+
+            // FIX: Re-populate file input because app.uploadFile() clears it on success
+            const file2 = new File(['sub content'], 'sub.txt', { type: 'text/plain' });
+            const dt2 = new DataTransfer();
+            dt2.items.add(file2);
+            input.files = dt2.files;
+
+            app.state.currentPath = 'My/Data/Folder';
+            uploadedFormData = null; // Reset
+            await app.uploadFile();
+
+            if (uploadedFormData && uploadedFormData instanceof FormData) {
+                const pathSent = uploadedFormData.get('path');
+                assertEqual(pathSent, 'My/Data/Folder', "Upload Step 3 (Subfolder): 'path' field sent correctly");
+            } else {
+                log("Upload Step 3 (Subfolder): Fetch failed", false);
+            }
+
+            // Cleanup
+            window.fetch = originalFetch;
+            window.alert = originalAlert;
+            if (document.body.contains(input)) {
+                document.body.removeChild(input);
+            }
+
+            // Summary
+            const summary = document.createElement('div');
+            summary.className = 'summary';
+            summary.innerText = `Tests Completed. Passed: ${passed}, Failed: ${failed}`;
+            summary.style.color = failed > 0 ? '#f44336' : '#4caf50';
+            document.body.appendChild(summary);
+
+        }, 100);
+    </script>
+</body>
+</html>
