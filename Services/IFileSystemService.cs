@@ -11,6 +11,7 @@ namespace TestProject.Services
         Task UploadFileAsync(string path, IFormFile file);
         FileDownloadDto GetFile(string path);
         void DeleteItem(string path);
+        void CreateFolder(string path, string name);
         IEnumerable<FileSystemItemDto> Search(string query);
     }
 }

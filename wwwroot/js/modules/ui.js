@@ -1,7 +1,7 @@
 ﻿import { formatBytes } from './utils.js';
 import { getDownloadUrl } from './api.js';
 
-// Events we want main.js to handle
+
 export const UIEvents = {
     NAVIGATE: 'navigate',
     DELETE: 'delete',
@@ -14,13 +14,12 @@ export function render(data, eventHandler) {
     const stats = document.getElementById('statsBar');
     const btnUp = document.getElementById('btnUp');
 
-    // Secure breadcrumbs text
     breadcrumbs.textContent = data.currentPath ? `/${data.currentPath}` : '/ (Root)';
 
-    // Disable "Up" if at root or in search mode
+
     btnUp.disabled = !data.currentPath || data.isSearch;
 
-    tbody.innerHTML = ''; // Clear existing
+    tbody.innerHTML = '';
 
     if (!data.items || data.items.length === 0) {
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Folder is empty / No results</td></tr>';
@@ -33,9 +32,14 @@ export function render(data, eventHandler) {
     let folderCount = 0;
 
     data.items.forEach(item => {
+        const row = createFileRow(item, eventHandler);
+        tbody.appendChild(row);
+    });
+
+
+    function createFileRow(item, eventHandler) {
         const tr = document.createElement('tr');
 
-        // Security Fix: Use textContent/createTextNode instead of innerHTML for user data
 
         // 1. Name Column
         const tdName = document.createElement('td');
@@ -104,9 +108,8 @@ export function render(data, eventHandler) {
                 eventHandler(UIEvents.DOWNLOAD, item.path);
             }
         };
-
-        tbody.appendChild(tr);
-    });
+        return tr;
+    }
 
     stats.textContent = `Showing ${folderCount} folders and ${fileCount} files. Total size: ${formatBytes(totalSize)}`;
 }

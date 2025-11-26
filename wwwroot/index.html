@@ -4,78 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>File Explorer</title>
-    <style>
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            margin: 20px;
-            color: #333;
-        }
-
-        #app {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .toolbar {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            align-items: center;
-            background: #f4f4f4;
-            padding: 10px;
-            border-radius: 4px;
-        }
-
-        .breadcrumbs {
-            font-weight: bold;
-            flex-grow: 1;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-
-        th, td {
-            text-align: left;
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f8f9fa;
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-            cursor: pointer;
-        }
-
-        .icon {
-            margin-right: 8px;
-        }
-
-        .btn {
-            padding: 6px 12px;
-            cursor: pointer;
-            background: #0078d4;
-            color: white;
-            border: none;
-            border-radius: 3px;
-        }
-
-        .btn-danger {
-            background: #d9534f;
-        }
-
-        .upload-zone {
-            border: 2px dashed #ccc;
-            padding: 20px;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-    </style>
+    <link rel="stylesheet" href="css/site.css" />
+    <script type="module" src="js/main.js"></script>
 </head>
 <body>
     <div id="app">
@@ -89,6 +19,7 @@
         <div class="toolbar">
             <button class="btn" id="btnUp">⬆ Up</button>
             <button class="btn" id="btnRefresh">↻ Refresh</button>
+            <button class="btn btn-success" id="btnNewFolder" style="background-color: #28a745;">+ New Folder</button>
             <span class="breadcrumbs" id="breadcrumbs">/</span>
             <input type="text" id="searchInput" placeholder="Search files..." style="padding: 5px;">
         </div>
@@ -108,7 +39,5 @@
 
         <div class="stats" id="statsBar">Loading...</div>
     </div>
-
-    <script type="module" src="js/main.js"></script>
 </body>
 </html>

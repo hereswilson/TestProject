@@ -15,9 +15,9 @@ namespace TestProject.Controllers
         }
 
         [HttpGet("browse")]
-        public IActionResult Browse([FromQuery] string path = "")
+        public IActionResult Browse([FromQuery] string path)
         {
-            var result = _fileService.GetDirectoryContents(path);
+            var result = _fileService.GetDirectoryContents(path ?? string.Empty);
             return Ok(result);
         }
 
@@ -40,8 +40,15 @@ namespace TestProject.Controllers
         [HttpGet("download")]
         public IActionResult Download(string path)
         {
-            var fileData = _fileService.GetFile(path);
-            return File(fileData.Content, fileData.MimeType, fileData.FileName);
+            try
+            {
+                var fileData = _fileService.GetFile(path);
+                return File(fileData.Content, fileData.MimeType, fileData.FileName);
+            }
+            catch (FileNotFoundException)
+            {
+                return NotFound("File not found.");
+            }
         }
 
         [HttpDelete("delete")]
@@ -49,6 +56,25 @@ namespace TestProject.Controllers
         {
             _fileService.DeleteItem(path);
             return Ok(new { Message = "Item deleted" });
+        }
+
+        [HttpPost("mkdir")]
+        public IActionResult CreateFolder([FromQuery] string? path, [FromQuery] string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return BadRequest("Folder name cannot be empty.");
+
+            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return BadRequest("Folder name contains invalid characters.");
+
+            try
+            {
+                _fileService.CreateFolder(path ?? string.Empty, name);
+                return Ok(new { Message = "Folder created" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
     }
 }

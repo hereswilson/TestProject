@@ -16,7 +16,13 @@ namespace TestProject.Services
 
         public FileSystemService(IConfiguration config)
         {
-            _rootPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            string? configuredPath = config["UploadDirectory"];
+
+            var rawPath = string.IsNullOrEmpty(configuredPath)
+                ? "Uploads"
+                : configuredPath;
+
+            _rootPath = Path.GetFullPath(rawPath);
 
             if (!Directory.Exists(_rootPath))
             {
@@ -82,9 +88,9 @@ namespace TestProject.Services
             var fullPath = GetSafePath(path);
             if (!File.Exists(fullPath)) throw new FileNotFoundException("File not found.");
 
-            var bytes = File.ReadAllBytes(fullPath);
+            var stream = File.OpenRead(fullPath);
 
-            return new FileDownloadDto(bytes, "application/octet-stream", Path.GetFileName(fullPath));
+            return new FileDownloadDto(stream, "application/octet-stream", Path.GetFileName(fullPath));
         }
 
         public void DeleteItem(string path)
@@ -105,6 +111,27 @@ namespace TestProject.Services
             }
         }
 
+        public void CreateFolder(string path, string name)
+        {
+            var safePath = GetSafePath(path);
+
+            var newFolderPath = Path.Combine(safePath, name);
+
+
+            var finalPath = Path.GetFullPath(newFolderPath);
+            if (!finalPath.StartsWith(_rootPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Cannot create folder outside of root.");
+            }
+
+            if (Directory.Exists(finalPath))
+            {
+                throw new IOException("Folder already exists.");
+            }
+
+            Directory.CreateDirectory(finalPath);
+        }
+
         public IEnumerable<FileSystemItemDto> Search(string searchTerm)
         {
             var dirInfo = new DirectoryInfo(_rootPath);
@@ -119,7 +146,7 @@ namespace TestProject.Services
             return files.Select(f => new FileSystemItemDto
             {
                 Name = f.Name,
-                Path = Path.GetRelativePath(_rootPath, f.FullName), 
+                Path = Path.GetRelativePath(_rootPath, f.FullName),
                 IsFolder = false,
                 Size = f.Length,
                 LastModified = f.LastWriteTime
@@ -129,7 +156,7 @@ namespace TestProject.Services
         //Helper Methods
         private string GetSafePath(string relativePath)
         {
-            var safeRelative = relativePath?.TrimStart('/', '\\') ?? "";
+            var safeRelative = relativePath?.TrimStart('/', '\\') ?? string.Empty;
             var fullPath = Path.GetFullPath(Path.Combine(_rootPath, safeRelative));
 
             if (!fullPath.StartsWith(_rootPath, StringComparison.OrdinalIgnoreCase))
@@ -141,7 +168,7 @@ namespace TestProject.Services
 
         private string GetRelativePath(string fullPath)
         {
-            if (fullPath.Equals(_rootPath, StringComparison.OrdinalIgnoreCase)) return "";
+            if (fullPath.Equals(_rootPath, StringComparison.OrdinalIgnoreCase)) return string.Empty;
             return fullPath.Substring(_rootPath.Length).TrimStart(Path.DirectorySeparatorChar);
         }
 
@@ -149,7 +176,7 @@ namespace TestProject.Services
         {
             if (string.IsNullOrEmpty(path)) return null;
             var parts = path.Trim('/', '\\').Split(new[] { '/', '\\' }, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length <= 1) return "";
+            if (parts.Length <= 1) return string.Empty;
             return string.Join("/", parts.Take(parts.Length - 1));
         }
     }
