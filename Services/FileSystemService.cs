@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using TestProject.Configuration;
 using TestProject.Models;
 
 namespace TestProject.Services
@@ -15,13 +17,9 @@ namespace TestProject.Services
 
         private readonly string _rootPath;
 
-        public FileSystemService(IConfiguration config)
+        public FileSystemService(IOptions<FileSystemOptions> options)
         {
-            string? configuredPath = config["UploadDirectory"];
-
-            var rawPath = string.IsNullOrEmpty(configuredPath)
-                ? "Uploads"
-                : configuredPath;
+            string rawPath = options.Value.UploadDirectory;
 
             _rootPath = Path.GetFullPath(rawPath);
 

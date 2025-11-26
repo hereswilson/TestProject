@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Diagnostics;
+using TestProject.Configuration;
 using TestProject.Services;
 
 namespace TestProject
@@ -11,6 +12,8 @@ namespace TestProject
 
             builder.Services.AddControllers();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
+            builder.Services.Configure<FileSystemOptions>(
+            builder.Configuration.GetSection(FileSystemOptions.SectionName));
             builder.Services.AddCors(options =>
             {
                 options.AddDefaultPolicy(policy =>
