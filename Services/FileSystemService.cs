@@ -141,15 +141,16 @@ namespace TestProject.Services
                 IgnoreInaccessible = true
             };
 
-            var files = dirInfo.GetFiles($"*{searchTerm}*", options);
+            var matches = dirInfo.GetFileSystemInfos($"*{searchTerm}*", options);
 
-            return files.Select(f => new FileSystemItemDto
+            return matches.Select(match => new FileSystemItemDto
             {
-                Name = f.Name,
-                Path = Path.GetRelativePath(_rootPath, f.FullName),
-                IsFolder = false,
-                Size = f.Length,
-                LastModified = f.LastWriteTime
+                Name = match.Name,
+                Path = GetRelativePath(match.FullName),
+                IsFolder = match is DirectoryInfo,
+                Size = (match as FileInfo)?.Length,
+                LastModified = match.LastWriteTime,
+                Extension = match.Extension
             });
         }
 
