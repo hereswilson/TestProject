@@ -50,5 +50,24 @@ namespace TestProject.Controllers
             _fileService.DeleteItem(path);
             return Ok(new { Message = "Item deleted" });
         }
+
+        [HttpPost("mkdir")]
+        public IActionResult CreateFolder([FromQuery] string? path, [FromQuery] string name)
+        {
+            if (string.IsNullOrWhiteSpace(name)) return BadRequest("Folder name cannot be empty.");
+
+            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return BadRequest("Folder name contains invalid characters.");
+
+            try
+            {
+                _fileService.CreateFolder(path ?? "", name);
+                return Ok(new { Message = "Folder created" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }

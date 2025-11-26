@@ -16,7 +16,13 @@ namespace TestProject.Services
 
         public FileSystemService(IConfiguration config)
         {
-            _rootPath = Path.Combine(Directory.GetCurrentDirectory(), "Uploads");
+            string? configuredPath = config["UploadDirectory"];
+
+            var rawPath = string.IsNullOrEmpty(configuredPath)
+                ? "Uploads"
+                : configuredPath;
+
+            _rootPath = Path.GetFullPath(rawPath);
 
             if (!Directory.Exists(_rootPath))
             {
@@ -105,6 +111,27 @@ namespace TestProject.Services
             }
         }
 
+        public void CreateFolder(string path, string name)
+        {
+            var safePath = GetSafePath(path);
+
+            var newFolderPath = Path.Combine(safePath, name);
+
+
+            var finalPath = Path.GetFullPath(newFolderPath);
+            if (!finalPath.StartsWith(_rootPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Cannot create folder outside of root.");
+            }
+
+            if (Directory.Exists(finalPath))
+            {
+                throw new IOException("Folder already exists.");
+            }
+
+            Directory.CreateDirectory(finalPath);
+        }
+
         public IEnumerable<FileSystemItemDto> Search(string searchTerm)
         {
             var dirInfo = new DirectoryInfo(_rootPath);
@@ -119,7 +146,7 @@ namespace TestProject.Services
             return files.Select(f => new FileSystemItemDto
             {
                 Name = f.Name,
-                Path = Path.GetRelativePath(_rootPath, f.FullName), 
+                Path = Path.GetRelativePath(_rootPath, f.FullName),
                 IsFolder = false,
                 Size = f.Length,
                 LastModified = f.LastWriteTime

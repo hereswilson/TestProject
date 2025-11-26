@@ -10,6 +10,7 @@ async function init() {
     document.getElementById('btnRefresh').onclick = refresh;
     document.getElementById('btnUp').onclick = navigateUp;
     document.getElementById('btnUpload').onclick = handleUpload;
+    document.getElementById('btnNewFolder').onclick = handleCreateFolder;
 
     // Bind Search
     const searchInput = document.getElementById('searchInput');
@@ -19,7 +20,7 @@ async function init() {
         debounceTimer = setTimeout(() => handleSearch(e.target.value), 400);
     });
 
-    handleRouting(); // Initial load
+    handleRouting();
 }
 
 // --- Routing & Navigation ---
@@ -34,7 +35,6 @@ async function handleRouting() {
 
     State.setCurrentPath(normalizePath(path));
 
-    // If we have a search term in the input, clear it when navigating folders
     if (document.getElementById('searchInput').value && !path.startsWith('Search Results')) {
         document.getElementById('searchInput').value = '';
     }
@@ -50,7 +50,6 @@ function navigateUp() {
     const current = State.state.currentPath;
     if (!current) return;
 
-    // Logic to strip last segment
     const parts = current.endsWith('/') ? current.slice(0, -1).split('/') : current.split('/');
     parts.pop();
     const parent = parts.join('/');
@@ -95,6 +94,18 @@ async function handleUpload() {
         refresh();
     } catch (error) {
         alert('Upload failed: ' + error.message);
+    }
+}
+
+async function handleCreateFolder() {
+    const name = prompt("Enter folder name:");
+    if (!name) return;
+
+    try {
+        await API.createFolder(State.state.currentPath, name);
+        refresh();
+    } catch (error) {
+        alert("Could not create folder: " + error.message);
     }
 }
 

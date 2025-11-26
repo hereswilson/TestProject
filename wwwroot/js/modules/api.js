@@ -11,7 +11,6 @@ export async function searchFiles(query) {
     const url = `${API_BASE}/search?query=${encodeURIComponent(query)}`;
     const response = await fetch(url);
     if (!response.ok) throw new Error(await response.text());
-    // Search returns a list of items, we normalize it to match the browse structure for the UI
     const items = await response.json();
     return { currentPath: "Search Results", items: items, parent: null, isSearch: true };
 }
@@ -38,4 +37,11 @@ export async function deleteItem(path) {
 
 export function getDownloadUrl(path) {
     return `${API_BASE}/download?path=${encodeURIComponent(path)}`;
+}
+
+export async function createFolder(path, name) {
+    const url = `${API_BASE}/mkdir?path=${encodeURIComponent(path || '')}&name=${encodeURIComponent(name)}`;
+
+    const response = await fetch(url, { method: 'POST' });
+    if (!response.ok) throw new Error(await response.text());
 }
