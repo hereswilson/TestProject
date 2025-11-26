@@ -15,10 +15,21 @@ namespace TestProject.Controllers
         }
 
         [HttpGet("browse")]
-        public IActionResult Browse([FromQuery] string path)
+        public IActionResult Browse([FromQuery] string? path)
         {
-            var result = _fileService.GetDirectoryContents(path ?? string.Empty);
-            return Ok(result);
+            try
+            {
+                var result = _fileService.GetDirectoryContents(path ?? string.Empty);
+                return Ok(result);
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                return NotFound(new { Error = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "An unexpected error occurred." });
+            }
         }
 
         [HttpGet("search")]
@@ -31,7 +42,25 @@ namespace TestProject.Controllers
         [HttpPost("upload")]
         public async Task<IActionResult> Upload([FromForm] string? path, [FromForm] IFormFile file)
         {
-            if (file == null || file.Length == 0) return BadRequest("No file selected.");
+            if (file == null || file.Length == 0) 
+                return BadRequest("No file selected.");
+
+            const long maxFileSize = 100 * 1024 * 1024; // 100MB
+            if (file.Length > maxFileSize)
+                return BadRequest($"File size exceeds maximum allowed size of {maxFileSize / (1024 * 1024)}MB.");
+
+
+            var fileName = Path.GetFileName(file.FileName);
+            if (string.IsNullOrWhiteSpace(fileName) ||
+                fileName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+                return BadRequest("Invalid file name.");
+
+            var allowedExtensions = new[] { ".jpg", ".png", ".pdf", ".txt", ".zip", ".doc", ".docx" };
+
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            if (!string.IsNullOrEmpty(extension) && !allowedExtensions.Contains(extension))
+                return BadRequest($"File type {extension} is not allowed.");
+
             var safePath = path ?? string.Empty;
             await _fileService.UploadFileAsync(safePath, file);
             return Ok(new { Message = "Upload successful" });
@@ -42,8 +71,7 @@ namespace TestProject.Controllers
         {
             try
             {
-                var fileData = _fileService.GetFile(path);
-                return File(fileData.Content, fileData.MimeType, fileData.FileName);
+                return _fileService.GetFileResult(path);
             }
             catch (FileNotFoundException)
             {
@@ -61,7 +89,8 @@ namespace TestProject.Controllers
         [HttpPost("mkdir")]
         public IActionResult CreateFolder([FromQuery] string? path, [FromQuery] string name)
         {
-            if (string.IsNullOrWhiteSpace(name)) return BadRequest("Folder name cannot be empty.");
+            if (string.IsNullOrWhiteSpace(name)) 
+                return BadRequest("Folder name cannot be empty.");
 
             if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
                 return BadRequest("Folder name contains invalid characters.");

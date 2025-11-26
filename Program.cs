@@ -11,6 +11,15 @@ namespace TestProject
 
             builder.Services.AddControllers();
             builder.Services.AddScoped<IFileSystemService, FileSystemService>();
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(policy =>
+                {
+                    policy.WithOrigins("http://localhost:7146")
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
             var app = builder.Build();
 
@@ -27,6 +36,7 @@ namespace TestProject
             });
 
             app.UseHttpsRedirection();
+            app.UseCors();
             app.UseStaticFiles();
             app.MapControllers();
 

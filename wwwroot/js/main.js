@@ -39,7 +39,7 @@ async function handleRouting() {
         document.getElementById('searchInput').value = '';
     }
 
-    await loadDirectory(State.state.currentPath);
+    await loadDirectory(State.state.currentPath, false);
 }
 
 function navigateTo(path) {
@@ -58,13 +58,17 @@ function navigateUp() {
 
 // --- Data Operations ---
 
-async function loadDirectory(path) {
+// main.js
+async function loadDirectory(path, forceRefresh = false) {
+    State.setLoading(true);
     try {
-        const data = await API.fetchDirectory(path);
+        const data = await API.fetchDirectory(path, forceRefresh);
         UI.render(data, handleUIEvent);
     } catch (error) {
         console.error(error);
-        alert("Error loading directory: " + error.message);
+        UI.showError("Error loading directory: " + error.message);
+    } finally {
+        State.setLoading(false);
     }
 }
 
@@ -84,7 +88,7 @@ async function handleSearch(query) {
 async function handleUpload() {
     const fileInput = document.getElementById('fileInput');
     if (fileInput.files.length === 0) {
-        alert('Please select a file first.');
+        UI.showError('Please select a file first.');
         return;
     }
 
@@ -93,7 +97,7 @@ async function handleUpload() {
         fileInput.value = '';
         refresh();
     } catch (error) {
-        alert('Upload failed: ' + error.message);
+        UI.showError('Upload failed: ' + error.message);
     }
 }
 
@@ -105,7 +109,7 @@ async function handleCreateFolder() {
         await API.createFolder(State.state.currentPath, name);
         refresh();
     } catch (error) {
-        alert("Could not create folder: " + error.message);
+        UI.showError("Could not create folder: " + error.message);
     }
 }
 
@@ -117,7 +121,7 @@ function handleUIEvent(eventType, payload) {
             navigateTo(payload);
             break;
         case UI.UIEvents.DELETE:
-            API.deleteItem(payload).then(refresh).catch(err => alert(err.message));
+            API.deleteItem(payload).then(refresh).catch(err => UI.showError(err.message));
             break;
         case UI.UIEvents.DOWNLOAD:
             window.location.href = API.getDownloadUrl(payload);
@@ -126,7 +130,8 @@ function handleUIEvent(eventType, payload) {
 }
 
 function refresh() {
-    handleRouting();
+    API.clearCache();
+    loadDirectory(State.state.currentPath, true);
 }
 
 init();

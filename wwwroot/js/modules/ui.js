@@ -1,4 +1,4 @@
-﻿import { formatBytes } from './utils.js';
+﻿import { formatBytes, getFileIcon } from './utils.js';
 import { getDownloadUrl } from './api.js';
 
 
@@ -45,7 +45,7 @@ export function render(data, eventHandler) {
         const tdName = document.createElement('td');
         const icon = document.createElement('span');
         icon.className = 'icon';
-        icon.textContent = item.isFolder ? '📁' : '📄';
+        icon.textContent = getFileIcon(item.name, item.isFolder);
         tdName.appendChild(icon);
         tdName.appendChild(document.createTextNode(' ' + item.name));
         tr.appendChild(tdName);
@@ -112,4 +112,25 @@ export function render(data, eventHandler) {
     }
 
     stats.textContent = `Showing ${folderCount} folders and ${fileCount} files. Total size: ${formatBytes(totalSize)}`;
+}
+
+
+export function showError(message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #d9534f;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    z-index: 2000;
+    max-width: 400px;
+  `;
+    errorDiv.textContent = message;
+    document.body.appendChild(errorDiv);
+
+    setTimeout(() => errorDiv.remove(), 5000);
 }

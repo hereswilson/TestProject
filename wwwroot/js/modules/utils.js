@@ -10,3 +10,27 @@
 export function normalizePath(path) {
     return path || '';
 }
+
+
+export function getFileIcon(fileName, isFolder) {
+    if (isFolder) return '📁';
+
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const iconMap = {
+        pdf: '📄',
+        doc: '📝',
+        docx: '📝',
+        xls: '📊',
+        xlsx: '📊',
+        jpg: '🖼️',
+        jpeg: '🖼️',
+        png: '🖼️',
+        gif: '🖼️',
+        mp4: '🎬',
+        mp3: '🎵',
+        zip: '📦',
+        txt: '📃',
+    };
+
+    return iconMap[ext] || '📄';
+}

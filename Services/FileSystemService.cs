@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -74,23 +75,30 @@ namespace TestProject.Services
         public async Task UploadFileAsync(string path, IFormFile file)
         {
             var targetDir = GetSafePath(path ?? string.Empty);
-            if (!Directory.Exists(targetDir)) throw new DirectoryNotFoundException("Directory does not exist.");
+            if (!Directory.Exists(targetDir)) 
+                throw new DirectoryNotFoundException("Directory does not exist.");
 
             var filePath = Path.Combine(targetDir, file.FileName);
+
             using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }
         }
 
-        public FileDownloadDto GetFile(string path)
+        public FileStreamResult GetFileResult(string path)
         {
             var fullPath = GetSafePath(path);
-            if (!File.Exists(fullPath)) throw new FileNotFoundException("File not found.");
+            if (!File.Exists(fullPath))
+                throw new FileNotFoundException("File not found.");
 
             var stream = File.OpenRead(fullPath);
+            var fileName = Path.GetFileName(fullPath);
 
-            return new FileDownloadDto(stream, "application/octet-stream", Path.GetFileName(fullPath));
+            return new FileStreamResult(stream, "application/octet-stream")
+            {
+                FileDownloadName = fileName
+            };
         }
 
         public void DeleteItem(string path)
@@ -114,20 +122,13 @@ namespace TestProject.Services
         public void CreateFolder(string path, string name)
         {
             var safePath = GetSafePath(path);
-
             var newFolderPath = Path.Combine(safePath, name);
 
 
-            var finalPath = Path.GetFullPath(newFolderPath);
-            if (!finalPath.StartsWith(_rootPath, StringComparison.OrdinalIgnoreCase))
-            {
-                throw new UnauthorizedAccessException("Cannot create folder outside of root.");
-            }
+            var finalPath = GetSafePath(Path.Combine(path, name));
 
             if (Directory.Exists(finalPath))
-            {
                 throw new IOException("Folder already exists.");
-            }
 
             Directory.CreateDirectory(finalPath);
         }
