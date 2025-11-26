@@ -6,7 +6,7 @@
     <title>File Explorer</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             margin: 20px;
             color: #333;
         }
@@ -16,7 +16,6 @@
             margin: 0 auto;
         }
 
-        /* Toolbar */
         .toolbar {
             display: flex;
             gap: 10px;
@@ -29,11 +28,9 @@
 
         .breadcrumbs {
             font-weight: bold;
-            font-size: 1.1em;
             flex-grow: 1;
         }
 
-        /* Table */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -55,21 +52,10 @@
             cursor: pointer;
         }
 
-        /* Icons/Types */
         .icon {
             margin-right: 8px;
-            font-weight: bold;
         }
 
-        .folder {
-            color: #dcb67a;
-        }
-
-        .file {
-            color: #5f6368;
-        }
-
-        /* Actions */
         .btn {
             padding: 6px 12px;
             cursor: pointer;
@@ -81,17 +67,6 @@
 
         .btn-danger {
             background: #d9534f;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        /* Stats */
-        .stats {
-            margin-top: 20px;
-            font-size: 0.9em;
-            color: #666;
         }
 
         .upload-zone {
@@ -107,38 +82,33 @@
         <h1>Server File Explorer</h1>
 
         <div class="upload-zone">
-            <h3>Upload File</h3>
             <input type="file" id="fileInput" />
-            <button class="btn" onclick="app.uploadFile()">Upload</button>
+            <button class="btn" id="btnUpload">Upload</button>
         </div>
 
         <div class="toolbar">
-            <button class="btn" onclick="app.navigateUp()" id="btnUp">⬆ Up</button>
+            <button class="btn" id="btnUp">⬆ Up</button>
+            <button class="btn" id="btnRefresh">↻ Refresh</button>
             <span class="breadcrumbs" id="breadcrumbs">/</span>
-            <button class="btn" onclick="app.refresh()">↻ Refresh</button>
+            <input type="text" id="searchInput" placeholder="Search files..." style="padding: 5px;">
         </div>
 
-        <thead>
-            <table id="fileTable">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Size/Count</th>
-                        <th>Last Modified</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="fileListBody">
-                </tbody>
-            </table>
-        </thead>
+        <table id="fileTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Size/Count</th>
+                    <th>Last Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="fileListBody"></tbody>
+        </table>
 
-        <div class="stats" id="statsBar">
-            Loading...
-        </div>
+        <div class="stats" id="statsBar">Loading...</div>
     </div>
 
-    <script src="js/app.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>
